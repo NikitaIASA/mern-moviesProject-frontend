@@ -1,9 +1,12 @@
 import React from "react";
 import { BsFillSunFill } from "react-icons/bs";
 import { Link } from "react-router-dom";
+import { useTheme } from "../../hooks";
 import Container from "../Container";
 
 const Navbar = () => {
+  const { toggleTheme } = useTheme();
+
   return (
     <div className="bg-secondary shadow-sm shadow-gray-500">
       <Container className="p-2">
@@ -14,7 +17,10 @@ const Navbar = () => {
 
           <ul className="flex items-center space-x-4">
             <li>
-              <button className="bg-dark-subtle p-1 rounded">
+              <button
+                onClick={toggleTheme}
+                className="dark:bg-white bg-dark-subtle p-1 rounded"
+              >
                 <BsFillSunFill className="text-secondary" size={24} />
               </button>
             </li>

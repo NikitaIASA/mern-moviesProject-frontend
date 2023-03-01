@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { verifyUserEmail } from "../../api/auth";
 import { commonModalClasses } from "../../utils/theme";
 import Container from "../Container";
 import FormContainer from "../form/FormContainer";
@@ -6,12 +8,29 @@ import Submit from "../form/Submit";
 import Title from "../form/Title";
 
 const OTP_LENGTH = 6;
+let currentOTPIndex;
+
+const isValidOTP = (otp) => { // Перевірка OTP кода
+  let valid = false;
+
+  for (let val of otp) { // Перевіряє кожен елемент масиву чи є він числом
+    valid = !isNaN(parseInt(val));
+    if (!valid) break; // Якщо зустрічається пустий рядок - виходимо з циклу
+  }
+
+  return valid;
+};
 
 const EmailVerification = () => {
   const [otp, setOtp] = useState(new Array(OTP_LENGTH).fill(""));
   const [activeOtpIndex, setActiveOtpIndex] = useState(0);
 
   const inputRef = useRef();
+
+  const { state } = useLocation();
+  const user = state?.user;
+  
+  const navigate = useNavigate();
 
   const focusNextInputField = (index) => {
     setActiveOtpIndex(index + 1);
@@ -39,15 +58,36 @@ const EmailVerification = () => {
   //     focusPrevInputField(index);
   //   }
   // }
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!isValidOTP(otp)) { // Перевіряємо OTP 
+      return console.log("invalid OTP");
+    }
+
+    // submit otp
+    const { error, message } = await verifyUserEmail({ 
+      OTP: otp.join(""), // Замість масиву надсилаємо в запрос число
+      userId: user.id,
+    });
+    if (error) return console.log(error);
+
+    console.log(message);
+  };
 
   useEffect(() => {
     inputRef.current?.focus();
   }, [activeOtpIndex]);
 
+  useEffect(() => {
+    if (!user) navigate("/not-found"); // Якщо користувач не зареєстрований, то кидаємо його на not-found page
+  }, [user, navigate]);
+
   return (
     <FormContainer>
       <Container>
-        <form className={commonModalClasses}>
+        <form onSubmit={handleSubmit} className={commonModalClasses}>
           <div>
             <Title>Please enter the OTP to verify your account</Title>
             <p className="text-center text-dark-subtle">
@@ -71,7 +111,7 @@ const EmailVerification = () => {
             })}
           </div>
 
-          <Submit value="Send Link" />
+          <Submit value="Verify account" />
         </form>
       </Container>
     </FormContainer>

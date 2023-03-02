@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { verifyUserEmail } from "../../api/auth";
+import { useNotification } from "../../hooks";
 import { commonModalClasses } from "../../utils/theme";
 import Container from "../Container";
 import FormContainer from "../form/FormContainer";
@@ -26,6 +27,7 @@ const EmailVerification = () => {
   const [activeOtpIndex, setActiveOtpIndex] = useState(0);
 
   const inputRef = useRef();
+  const { updateNotification } = useNotification();
 
   const { state } = useLocation();
   const user = state?.user;
@@ -43,22 +45,23 @@ const EmailVerification = () => {
     setActiveOtpIndex(nextIndex);
   };
 
-  const handleOtpChange = ({ target }, index) => {
+  const handleOtpChange = ({ target }) => {
     const { value } = target;
     const newOtp = [...otp];
-    newOtp[index] = value.substring(value.length - 1, value.length);
+    newOtp[currentOTPIndex] = value.substring(value.length - 1, value.length);
 
-    if (!value) focusPrevInputField(index);
-    else focusNextInputField(index);
+    if (!value) focusPrevInputField(currentOTPIndex);
+    else focusNextInputField(currentOTPIndex);
     setOtp([...newOtp]);
   };
+  const handleKeyDown = ({ key }, index) => {
+    currentOTPIndex = index;
+    if (key === "Backspace") {
+      focusPrevInputField(currentOTPIndex);
+    }
+  };
 
-  // const handleKeyDown = ({key}, index) => {
-  //   if (key === 'Backspace') {
-  //     focusPrevInputField(index);
-  //   }
-  // }
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -71,9 +74,9 @@ const EmailVerification = () => {
       OTP: otp.join(""), // Замість масиву надсилаємо в запрос число
       userId: user.id,
     });
-    if (error) return console.log(error);
+    if (error) return updateNotification("error", error);
 
-    console.log(message);
+   updateNotification("success", message);
   };
 
   useEffect(() => {
@@ -103,8 +106,8 @@ const EmailVerification = () => {
                   key={index}
                   type="number"
                   value={otp[index] || ""}
-                  onChange={(e) => handleOtpChange(e, index)}
-                  // onKeyDown={(e) => handleKeyDown(e, index)}
+                  onChange={handleOtpChange}
+                  onKeyDown={(e) => handleKeyDown(e, index)}
                   className="w-12 h-12 border-2 dark:border-dark-subtle  border-light-subtle darK:focus:border-white focus:border-primary rounded bg-transparent outline-none text-center dark:text-white text-primary font-semibold text-xl spin-button-none"
                 />
               );
